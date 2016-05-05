@@ -100,4 +100,51 @@ class Rooftop_Preview_Mode_Admin_Public {
 
 	}
 
+    /**
+     *
+     * Called by rest_api_init hook
+     * Use register_rest_field to add a field to the response, with a
+     * value populated by the given callback method (get_callback).
+     *
+     */
+    public function add_fields() {
+        $endpoint = get_site_option( 'preview_mode_url' );
+        if( !isset( $endpoint->url ) ) {return;}
+
+
+        $types = get_post_types(array(
+            'public' => true
+        ));
+
+        foreach($types as $key => $type) {
+            register_rest_field( $type,
+                'preview_key',
+                array(
+                    'get_callback'    => array( $this, 'add_preview_key_field' ),
+                    'update_callback' => null,
+                    'schema'          => null,
+                )
+            );
+        }
+    }
+
+    /**
+     * @param $object
+     * @param $field
+     * @param $request
+     * @return string
+     */
+    function add_preview_key_field($object, $field, $request) {
+        global $post;
+        $key = apply_filters( 'rooftop_generate_post_preview_key', $post );
+
+        return $key;
+    }
+
+    function generate_post_preview_key( $post ) {
+        $components = [$post->post_type, $post->ID, $post->post_modified];
+        $key = md5(implode("-", $components));
+
+        return $key;
+    }
 }
