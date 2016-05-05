@@ -100,6 +100,71 @@ class Rooftop_Preview_Mode_Admin_Admin {
 
 	}
 
+    public function add_preview_button_metabox( $post_type ) {
+        $endpoint = get_site_option( 'preview_mode_url' );
+
+        if( is_admin() && current_user_can( 'manage_options' ) && isset( $endpoint->url ) ) {
+            add_meta_box( $this->plugin_name."-metabox", "Preview Mode", array( $this, 'render_preview_mode_metabox' ), $post_type, 'side', 'default' );
+        }
+    }
+
+    function render_preview_mode_metabox() {
+        global $post;
+        $endpoint = get_site_option( 'preview_mode_url');
+        $id = $post->ID;
+        $post_type = $post->post_type;
+        $key = apply_filters( 'rooftop_generate_post_preview_key', $post );
+        $form = <<<EOF
+
+<input type="submit" name="rooftop-preview-button" value="View in preview mode" class="button button-primary button-large" data-preview="true" data-preview-url="{$endpoint->url}" data-preview-id="{$id}" data-preview-post_type="{$post_type}" data-preview-key="{$key}" />
+
+EOF;
+        echo $form;
+    }
+
+    /**
+     * generate a random salt if we haven't done so already
+     */
+    public function preview_admin_generate_site_salt() {
+        if ( current_user_can( 'manage_options' ) && !get_site_option( 'preview_mode_salt', false ) ) {
+            update_site_option( 'preview_mode_salt', uniqid(mt_rand(), true) );
+        }
+    }
+
+    /**
+     * @param $post_id
+     *
+     * since the preview button is nested in post's <form> tag, we check for 'rooftop-preview-button' in the POST,
+     * if we have that, then the preview button was clicked. in this case, since we need to POST to the client, we render a hidden
+     * form into the page and immediately submit it with JS.
+     */
+    public function preview_mode_redirect( $post_id ) {
+        if( isset( $_POST['rooftop-preview-button'] ) ) {
+            $post = get_post( $post_id );
+
+            $endpoint = get_site_option( 'preview_mode_url');
+            $id = $post->ID;
+            $post_type = $post->post_type;
+            $key = apply_filters( 'rooftop_generate_post_preview_key', $post );
+            $form = <<<EOF
+
+<form action="{$endpoint->url}" name="rooftop_preview_form" method="POST">
+    <input type="hidden" name="id" value="{$id}" />
+    <input type="hidden" name="post_type" value="{$post_type}" />
+    <input type="hidden" name="preview_key" value="{$key}" />
+</form>
+
+<script type="text/javascript">
+document.rooftop_preview_form.submit()
+</script>
+
+EOF;
+            echo $form;
+
+            exit;
+        }
+    }
+
     /*******
      * Add the Preview mode admin interface
      *******/
@@ -130,6 +195,7 @@ class Rooftop_Preview_Mode_Admin_Admin {
 
     public function preview_mode_admin_index() {
         $endpoint = get_site_option( 'preview_mode_url' );
+        $salt     = get_site_option( 'preview_mode_salt', false );
         require_once plugin_dir_path( __FILE__ ) . 'partials/rooftop-preview-mode-admin-index.php';
     }
 
