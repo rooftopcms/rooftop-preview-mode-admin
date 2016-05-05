@@ -1,0 +1,21 @@
+{
+    "name": "rooftopcms/rooftop-preview-mode-admin",
+    "description": "Detect whether a client is making a request in preview mode and define a constant accordingly",
+    "license": "GPL-3.0",
+    "authors": [
+        {
+            "name": "Rooftop CMS",
+            "email": "hello@rooftopcms.com"
+        }
+    ],
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "http://wpackagist.org"
+        }
+    ],
+    "type": "wordpress-muplugin",
+    "require": {
+      "rooftopcms/rooftop-preview-mode"
+    }
+}
