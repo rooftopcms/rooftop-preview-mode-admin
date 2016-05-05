@@ -100,4 +100,43 @@ class Rooftop_Preview_Mode_Admin_Admin {
 
 	}
 
+    /*******
+     * Add the Preview mode admin interface
+     *******/
+    public function preview_menu_links() {
+        $rooftop_preview_mode_menu_slug = "rooftop-overview";
+        add_submenu_page($rooftop_preview_mode_menu_slug, "Preview Mode", "Preview Mode", "manage_options", $this->plugin_name."-overview", function() {
+            if($_POST && array_key_exists('method', $_POST)) {
+                $method = strtoupper($_POST['method']);
+            }elseif($_POST && array_key_exists('id', $_POST)) {
+                $method = 'PATCH';
+            }else {
+                $method = $_SERVER['REQUEST_METHOD'];
+            }
+
+            switch($method) {
+                case 'GET':
+                    $this->preview_mode_admin_index();
+                    break;
+                default:
+                     if( !isset( $_POST['preview-mode-admin-field-token']) || !wp_verify_nonce( $_POST['preview-mode-admin-field-token'], 'rooftop-preview-mode-admin') ) {
+                         echo "Couldn't verify form input";
+                         exit;
+                     }
+                    $this->update_preview_mode_url();
+            }
+        });
+    }
+
+    public function preview_mode_admin_index() {
+        $endpoint = get_site_option( 'preview_mode_url' );
+        require_once plugin_dir_path( __FILE__ ) . 'partials/rooftop-preview-mode-admin-index.php';
+    }
+
+    public function update_preview_mode_url() {
+        $endpoint = (object)array('url' => $_POST['url']);
+        update_site_option( 'preview_mode_url', $endpoint );
+
+        $this->preview_mode_admin_index();
+    }
 }
