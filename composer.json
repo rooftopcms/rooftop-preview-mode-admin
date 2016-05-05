@@ -16,6 +16,6 @@
     ],
     "type": "wordpress-muplugin",
     "require": {
-      "rooftopcms/rooftop-preview-mode"
+        "rooftopcms/rooftop-preview-mode": "dev-development"
     }
 }
