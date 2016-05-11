@@ -154,12 +154,10 @@ class Rooftop_Preview_Mode_Admin {
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
 
-        $this->loader->add_action( 'plugins_loaded', $plugin_admin, 'preview_admin_generate_site_salt' );
-
         $this->loader->add_action( 'admin_menu', $plugin_admin, 'preview_menu_links' );
-        $this->loader->add_action( 'save_post', $plugin_admin, 'preview_mode_redirect' );
-        $this->loader->add_filter( 'add_meta_boxes', $plugin_admin, 'add_preview_button_metabox', 20 );
-	}
+
+        $this->loader->add_filter( 'preview_post_link', $plugin_admin, 'alter_preview_link' );
+    }
 
 	/**
 	 * Register all of the hooks related to the public-facing functionality
@@ -177,7 +175,7 @@ class Rooftop_Preview_Mode_Admin {
 
         $this->loader->add_action( 'rest_api_init', $plugin_public, 'add_fields' );
 
-        $this->loader->add_filter( 'rooftop_generate_post_preview_key', $plugin_public, 'generate_post_preview_key', 10, 1 );
+        $this->loader->add_filter( 'rooftop_generate_post_preview_key', $plugin_public, 'generate_post_preview_key', 110, 1 );
 	}
 
 	/**
