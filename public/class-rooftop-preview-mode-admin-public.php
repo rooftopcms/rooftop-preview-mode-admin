@@ -169,18 +169,16 @@ class Rooftop_Preview_Mode_Admin_Public {
 
     function get_preview_version( $request ) {
         global $post;
+        $post = get_post( $request['parent_id'] );
 
-        $id = $request['parent_id'];
-        $post = get_post( $id );
+        $preview_post = wp_get_post_autosave( $post->ID );
 
-        $preview = wp_get_post_autosave( $post->ID );
-
-        if( $preview ) {
+        if( $preview_post ) {
             $method = "GET";
             $route  = $request->get_route();
 
             $preview_request = new WP_REST_Request($method, $route);
-            $preview_data = $this->prepare_item_for_response( $preview, $post->post_type, $preview_request );
+            $preview_data = $this->prepare_item_for_response( $preview_post, $post->post_type, $preview_request );
             $preview_response = rest_ensure_response( $preview_data );
 
             return $preview_response;
@@ -224,21 +222,23 @@ class Rooftop_Preview_Mode_Admin_Public {
     }
 
     function prepare_item_for_response( $preview_post, $type, $preview_request ) {
-        setup_postdata( $preview_post );
+        global $post;
+
+        setup_postdata( $post );
 
         // Base fields for every post.
         $preview_data = array(
             'id'           => $preview_post->ID,
-            'preview_key'  => apply_filters( 'rooftop_generate_post_preview_key', $preview_post ),
+            'preview_key'  => apply_filters( 'rooftop_generate_post_preview_key', $post ),
             'guid'         => array(
                 /** This filter is documented in wp-includes/post-template.php */
                 'rendered' => apply_filters( 'get_the_guid', $preview_post->guid ),
                 'raw'      => $preview_post->guid,
             ),
-            'password'     => $preview_post->post_password,
-            'slug'         => $preview_post->post_name,
-            'status'       => $preview_post->post_status,
-            'type'         => $preview_post->post_type,
+            'password'     => $post->post_password,
+            'slug'         => $post->post_name,
+            'status'       => $post->post_status,
+            'type'         => $post->post_type,
             'link'         => get_permalink( $preview_post->ID ),
         );
 
@@ -282,9 +282,15 @@ class Rooftop_Preview_Mode_Admin_Public {
         }
     }
 
-    function generate_post_preview_key( $post ) {
-        $components = [$post->post_type, $post->ID, $post->post_modified];
-        $key = md5(implode("-", $components));
+    function generate_post_preview_key( $original_post ) {
+        $previewing_post = wp_get_post_autosave( $original_post->ID );
+        
+        if( $previewing_post ) {
+            $components = [$previewing_post->post_type, $previewing_post->ID, $previewing_post->post_modified];
+            $key = md5(implode("-", $components));
+        }else {
+            $key = null;
+        }
 
         return $key;
     }
