@@ -134,7 +134,7 @@ class Rooftop_Preview_Mode_Admin_Admin {
             }
         } );
 
-        add_submenu_page($rooftop_preview_mode_menu_slug, "Preview Mode", "Preview Mode", "manage_options", $this->plugin_name."-preview", function() {
+        add_submenu_page($rooftop_preview_mode_menu_slug."hidden", "Preview Mode Redirectsss", "Preview Mode Redirectsss", "manage_options", $this->plugin_name."-preview", function() {
             echo "<p>Previewing...</p>";
             $this->preview_mode_redirect_page($_GET['post']);
             exit;
@@ -151,29 +151,6 @@ class Rooftop_Preview_Mode_Admin_Admin {
         update_site_option( 'preview_mode_url', $endpoint );
 
         $this->preview_mode_admin_index();
-    }
-
-
-    public function add_preview_button_metabox( $post_type ) {
-        $endpoint = get_site_option( 'preview_mode_url' );
-
-        if( is_admin() && current_user_can( 'manage_options' ) && isset( $endpoint->url ) ) {
-            add_meta_box( $this->plugin_name."-metabox", "Preview Mode", array( $this, 'render_preview_mode_metabox' ), $post_type, 'side', 'default' );
-        }
-    }
-
-    function render_preview_mode_metabox() {
-        global $post;
-        $endpoint = get_site_option( 'preview_mode_url');
-        $id = $post->ID;
-        $post_type = $post->post_type;
-        $key = apply_filters( 'rooftop_generate_post_preview_key', $post );
-        $form = <<<EOF
-
-<a id="rooftop-post-preview" class="button primary" href="/wp-admin/admin.php?page=rooftop-preview-mode-admin-preview&post=$post->ID" target="wp-preview-$post->ID">View in Preview Mode</a>
-
-EOF;
-        echo $form;
     }
 
     /**
