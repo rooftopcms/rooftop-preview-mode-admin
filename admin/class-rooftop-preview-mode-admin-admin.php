@@ -134,7 +134,7 @@ class Rooftop_Preview_Mode_Admin_Admin {
             }
         } );
 
-        add_submenu_page($rooftop_preview_mode_menu_slug."hidden", "Preview Mode Redirectsss", "Preview Mode Redirectsss", "manage_options", $this->plugin_name."-preview", function() {
+        add_submenu_page($rooftop_preview_mode_menu_slug."hidden", "Preview Mode Redirect", "Preview Mode Redirect", "manage_options", $this->plugin_name."-preview", function() {
             echo "<p>Previewing...</p>";
             $this->preview_mode_redirect_page($_GET['post']);
             exit;
