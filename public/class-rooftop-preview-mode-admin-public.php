@@ -188,8 +188,33 @@ class Rooftop_Preview_Mode_Admin_Public {
             return new Custom_WP_Error( 'rest_no_route', 'This post has no revisions available to preview', array( 'status' => 404 ) );
         }
     }
-    function check_preview_permission() {
-        return true;
+    function check_preview_permission( $request ) {
+        $post = get_post( $request['parent_id'] );
+        $post_type = get_post_type_object( $post->post_type );
+        $post_status_obj = get_post_status_object( $post->post_status );
+
+        if( current_user_can( $post_type->cap->edit_post, $post->ID ) ) {
+            return true;
+        }
+
+        // Can we read the post?
+        if ( 'publish' === $post->post_status || current_user_can( $post_type->cap->read_post, $post->ID ) ) {
+            return true;
+        }
+
+        if ( $post_status_obj && $post_status_obj->public ) {
+            return true;
+        }
+
+        if ( 'inherit' === $post->post_status && $post->post_parent > 0 ) {
+            $parent = get_post( $post->post_parent );
+
+            if ( $this->check_preview_permission( $parent ) ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     function prepare_item_for_response( $preview_post, $type, $preview_request ) {
