@@ -101,44 +101,154 @@ class Rooftop_Preview_Mode_Admin_Public {
 	}
 
     /**
-     *
-     * Called by rest_api_init hook
-     * Use register_rest_field to add a field to the response, with a
-     * value populated by the given callback method (get_callback).
+     * If we have a HTTP_PREVIEW (preview: true) then we should set the global const ROOFTOP_INCLUDE_DRAFTS to true.
      *
      */
-    public function add_fields() {
-        $endpoint = get_site_option( 'preview_mode_url' );
-        if( !isset( $endpoint->url ) ) {return;}
+    public function define_rooftop_drafts_constant() {
+        $preview_mode   = strtolower( @$_SERVER["HTTP_PREVIEW"] )== "true";
+        $include_drafts = strtolower( @$_SERVER["HTTP_INCLUDE_DRAFTS"] ) == "true";
+        $preview_route  = preg_match( "/\/preview$/", parse_url( @$_SERVER["REQUEST_URI"] )['path'] );
 
-
-        $types = get_post_types(array(
-            'public' => true
-        ));
-
-        foreach($types as $key => $type) {
-            register_rest_field( $type,
-                'preview_key',
-                array(
-                    'get_callback'    => array( $this, 'add_preview_key_field' ),
-                    'update_callback' => null,
-                    'schema'          => null,
-                )
-            );
+        if( $preview_mode || $include_drafts || $preview_route ) {
+            define( "ROOFTOP_INCLUDE_DRAFTS", true );
+        }else {
+            define( "ROOFTOP_INCLUDE_DRAFTS", false );
         }
     }
 
-    /**
-     * @param $object
-     * @param $field
-     * @param $request
-     * @return string
-     */
-    function add_preview_key_field($object, $field, $request) {
-        global $post;
-        $key = apply_filters( 'rooftop_generate_post_preview_key', $post );
+    public function published_statuses() {
+        if( ROOFTOP_INCLUDE_DRAFTS ) {
+            return array( 'publish', 'draft', 'scheduled', 'pending' );
+        }else {
+            return array( 'publish' );
+        }
+    }
 
-        return $key;
+    public function previewable_content_types() {
+        global $_wp_post_type_features;
+
+        $post_types = get_post_types( array( 'public' => true, 'show_in_rest' => true ) );
+        $types_with_revisons = array_filter( $post_types, function( $type ) use ( $_wp_post_type_features ) {
+            $type_exists = isset( $_wp_post_type_features[$type] );
+            $type_has_revisions_capability = ( $type_exists && @$_wp_post_type_features[$type]['revisions'] == true );
+
+            $supports_revisions = $type_exists && $type_has_revisions_capability;
+
+            return $supports_revisions;
+        } );
+
+        return $types_with_revisons;
+    }
+
+    public function add_preview_route( $server ) {
+        $post_types = apply_filters( 'rooftop_previewable_content_types', array() );
+
+        $routes = $server->get_routes();
+
+        foreach( $post_types as $type ) {
+            array_filter( array_keys( $routes ), function( $route ) use ( $type, $routes ) {
+                $pluralized_type = "${type}s";
+
+                if( preg_match( "/\/${pluralized_type}$/", $route, $matches ) ) {
+                    $rest_base     = preg_replace( "/\/${pluralized_type}$/", "", $route );
+                    $rest_base     = preg_replace( "/^\//", "", $rest_base );
+
+                    $preview_route = "/${pluralized_type}/(?P<parent_id>[\d]+)/preview";
+
+                    register_rest_route( $rest_base, $preview_route, array(
+                        array(
+                            'methods'             => WP_REST_Server::READABLE,
+                            'callback'            => array( $this, 'get_preview_version' ),
+                            'permission_callback' => array( $this, 'check_preview_permission')
+                        )
+                    ) );
+                }
+            } );
+        }
+    }
+
+    function get_preview_version( $request ) {
+        global $post;
+
+        $id = $request['parent_id'];
+        $post = get_post( $id );
+
+        $preview = wp_get_post_autosave( $post->ID );
+
+        if( $preview ) {
+            $method = "GET";
+            $route  = $request->get_route();
+
+            $preview_request = new WP_REST_Request($method, $route);
+            $preview_data = $this->prepare_item_for_response( $preview, $post->post_type, $preview_request );
+            $preview_response = rest_ensure_response( $preview_data );
+
+            return $preview_response;
+        }else {
+            return new Custom_WP_Error( 'rest_no_route', 'This post has no revisions available to preview', array( 'status' => 404 ) );
+        }
+    }
+    function check_preview_permission() {
+        return true;
+    }
+
+    function prepare_item_for_response( $preview_post, $type, $preview_request ) {
+        setup_postdata( $preview_post );
+
+        // Base fields for every post.
+        $preview_data = array(
+            'id'           => $preview_post->ID,
+            'preview_key'  => apply_filters( 'rooftop_generate_post_preview_key', $preview_post ),
+            'guid'         => array(
+                /** This filter is documented in wp-includes/post-template.php */
+                'rendered' => apply_filters( 'get_the_guid', $preview_post->guid ),
+                'raw'      => $preview_post->guid,
+            ),
+            'password'     => $preview_post->post_password,
+            'slug'         => $preview_post->post_name,
+            'status'       => $preview_post->post_status,
+            'type'         => $preview_post->post_type,
+            'link'         => get_permalink( $preview_post->ID ),
+        );
+
+        // Wrap the data in a response object.
+        $preview_response = rest_ensure_response( $preview_data );
+
+        /**
+         * Filter the post data for a response.
+         *
+         * The dynamic portion of the hook name, $this->post_type, refers to post_type of the post being
+         * prepared for the response.
+         *
+         * @param WP_REST_Response   $response   The response object.
+         * @param WP_Post            $post       Post object.
+         * @param WP_REST_Request    $request    Request object.
+         */
+
+        $prepared = apply_filters( 'rest_prepare_'.$type, $preview_response, $preview_post, $preview_request );
+
+        return $prepared;
+    }
+
+    /**
+     * if any of the post types are in anything but a published state and we're NOT in preview mode,
+     * we should send back a response which mimics the WP_Error auth failed response
+     *
+     * note: we need to add this hook since we can't alter the query args on a single-resource endpoint (rest_post_query is only called on collections)
+     */
+    public function check_response_publish_status() {
+        $types = get_post_types( array( 'public' => true, 'show_in_rest' => true ) );
+
+        foreach( $types as $key => $type ) {
+            add_action( "rest_prepare_$type", function( $response ) {
+                global $post;
+
+                if( $post->post_status != 'publish' && !ROOFTOP_INCLUDE_DRAFTS ) {
+                    $response = new Custom_WP_Error( 'unauthorized', 'Authentication failed', array( 'status'=>403 ) );
+                }
+                return $response;
+            });
+        }
     }
 
     function generate_post_preview_key( $post ) {
