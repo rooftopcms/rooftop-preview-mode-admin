@@ -228,7 +228,7 @@ class Rooftop_Preview_Mode_Admin_Public {
 
         // Base fields for every post.
         $preview_data = array(
-            'id'           => $preview_post->ID,
+            'id'           => $post->ID,
             'preview_key'  => apply_filters( 'rooftop_generate_post_preview_key', $post ),
             'guid'         => array(
                 /** This filter is documented in wp-includes/post-template.php */
