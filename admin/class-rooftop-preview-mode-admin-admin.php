@@ -135,7 +135,6 @@ class Rooftop_Preview_Mode_Admin_Admin {
         } );
 
         add_submenu_page($rooftop_preview_mode_menu_slug."hidden", "Preview Mode Redirect", "Preview Mode Redirect", "manage_options", $this->plugin_name."-preview", function() {
-            echo "<p>Previewing...</p>";
             $this->preview_mode_redirect_page($_GET['post']);
             exit;
         } );
@@ -162,6 +161,15 @@ class Rooftop_Preview_Mode_Admin_Admin {
 
         $endpoint = get_site_option( 'preview_mode_url');
         $id = $post->ID;
+
+        if( ! $endpoint ) {
+            $link = "<a href='?page=rooftop-preview-mode-admin-overview'>here</a>";
+            echo "<br/><br/>Please configure your preview mode endpoint ${link}";
+            return;
+        }else {
+            echo "Previewing...";
+        }
+
         $post_type = $post->post_type;
         $key = apply_filters( 'rooftop_generate_post_preview_key', $post );
 
