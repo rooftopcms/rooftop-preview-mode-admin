@@ -242,6 +242,7 @@ class Rooftop_Preview_Mode_Admin_Public {
             'link'         => get_permalink( $preview_post->ID ),
         );
 
+        $preview_data = $this->add_additional_fields_to_object( $preview_data, $preview_request );
         // Wrap the data in a response object.
         $preview_response = rest_ensure_response( $preview_data );
 
@@ -294,4 +295,48 @@ class Rooftop_Preview_Mode_Admin_Public {
 
         return $key;
     }
+
+    /**
+     * Add the values from additional fields to a data object.
+     *
+     * @param array  $object
+     * @param WP_REST_Request $request
+     * @return array modified object with additional fields.
+     */
+    protected function add_additional_fields_to_object( $object, $request ) {
+
+        $additional_fields = $this->get_additional_fields( $object['type'] );
+
+        foreach ( $additional_fields as $field_name => $field_options ) {
+
+            if ( ! $field_options['get_callback'] ) {
+                continue;
+            }
+
+            $object[ $field_name ] = call_user_func( $field_options['get_callback'], $object, $field_name, $request, $object['type'] );
+        }
+
+        return $object;
+    }
+    /**
+     * Get all the registered additional fields for a given object-type.
+     *
+     * @param  string $object_type
+     * @return array
+     */
+    protected function get_additional_fields( $object_type = null ) {
+
+        if ( ! $object_type ) {
+            return array();
+        }
+
+        global $wp_rest_additional_fields;
+
+        if ( ! $wp_rest_additional_fields || ! isset( $wp_rest_additional_fields[ $object_type ] ) ) {
+            return array();
+        }
+
+        return $wp_rest_additional_fields[ $object_type ];
+    }
+
 }
