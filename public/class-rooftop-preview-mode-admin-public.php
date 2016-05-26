@@ -181,11 +181,16 @@ class Rooftop_Preview_Mode_Admin_Public {
             $preview_data = $this->prepare_item_for_response( $preview_post, $post->post_type, $preview_request );
             $preview_response = rest_ensure_response( $preview_data );
 
+            $rooftop_links_filter = "rooftop_prepare_{$post->post_type}_links";
+            $rooftop_links = apply_filters( $rooftop_links_filter, array(), $post );
+            $preview_response->add_links( $rooftop_links );
+
             return $preview_response;
         }else {
             return new Custom_WP_Error( 'rest_no_route', 'This post has no revisions available to preview', array( 'status' => 404 ) );
         }
     }
+
     function check_preview_permission( $request ) {
         $post = get_post( $request['parent_id'] );
         $post_type = get_post_type_object( $post->post_type );
@@ -339,4 +344,22 @@ class Rooftop_Preview_Mode_Admin_Public {
         return $wp_rest_additional_fields[ $object_type ];
     }
 
+    protected function prepare_links( $post ) {
+        $base = "foo";
+        $post_type = "bar";
+
+        $links = array(
+            'self' => array(
+                'href'   => rest_url( trailingslashit( $base ) . $post->ID ),
+            ),
+            'collection' => array(
+                'href'   => rest_url( $base ),
+            ),
+            'about'      => array(
+                'href'   => rest_url( '/wp/v2/types/' . $post_type ),
+            ),
+        );
+
+        return $links;
+    }
 }
