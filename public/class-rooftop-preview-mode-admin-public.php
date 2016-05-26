@@ -262,6 +262,15 @@ class Rooftop_Preview_Mode_Admin_Public {
          * @param WP_REST_Request    $request    Request object.
          */
 
+        /*
+         * hooks that we call as part of the rest_prepare_$post_type hooks will expect the post we're passing in
+         * to be of a certain type. ie, we add a hook on rest_prepare_page, but if we dont override preview_post's post_type,
+         * the hook will be rest_prepare_revision
+         */
+        $preview_post->ID          = $post->ID;
+        $preview_post->post_type   = $post->post_type;   // call the right hooks
+        $preview_post->post_parent = $post->post_parent; // ensure we have the same parent/child hierarchy
+
         $prepared = apply_filters( 'rest_prepare_'.$type, $preview_response, $preview_post, $preview_request );
 
         return $prepared;
