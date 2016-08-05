@@ -97,32 +97,7 @@ class Rooftop_Preview_Mode_Admin_Public {
 		 */
 
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/rooftop-preview-mode-admin-public.js', array( 'jquery' ), $this->version, false );
-
 	}
-
-    /**
-     * If we have a HTTP_PREVIEW (preview: true) then we should set the global const ROOFTOP_INCLUDE_DRAFTS to true.
-     *
-     */
-    public function define_rooftop_drafts_constant() {
-        $preview_mode   = strtolower( @$_SERVER["HTTP_PREVIEW"] )== "true";
-        $include_drafts = strtolower( @$_SERVER["HTTP_INCLUDE_DRAFTS"] ) == "true";
-        $preview_route  = preg_match( "/\/preview$/", parse_url( @$_SERVER["REQUEST_URI"] )['path'] );
-
-        if( $preview_mode || $include_drafts || $preview_route ) {
-            define( "ROOFTOP_INCLUDE_DRAFTS", true );
-        }else {
-            define( "ROOFTOP_INCLUDE_DRAFTS", false );
-        }
-    }
-
-    public function published_statuses() {
-        if( ROOFTOP_INCLUDE_DRAFTS ) {
-            return array( 'publish', 'draft', 'scheduled', 'pending' );
-        }else {
-            return array( 'publish' );
-        }
-    }
 
     public function previewable_content_types() {
         global $_wp_post_type_features;
@@ -244,6 +219,7 @@ class Rooftop_Preview_Mode_Admin_Public {
             'slug'         => $post->post_name,
             'status'       => $post->post_status,
             'type'         => $post->post_type,
+            'title'        => $preview_post->post_title,
             'link'         => get_permalink( $preview_post->ID ),
         );
 
@@ -267,34 +243,12 @@ class Rooftop_Preview_Mode_Admin_Public {
          * to be of a certain type. ie, we add a hook on rest_prepare_page, but if we dont override preview_post's post_type,
          * the hook will be rest_prepare_revision
          */
-        $preview_post->ID          = $post->ID;
         $preview_post->post_type   = $post->post_type;   // call the right hooks
         $preview_post->post_parent = $post->post_parent; // ensure we have the same parent/child hierarchy
 
         $prepared = apply_filters( 'rest_prepare_'.$type, $preview_response, $preview_post, $preview_request );
 
         return $prepared;
-    }
-
-    /**
-     * if any of the post types are in anything but a published state and we're NOT in preview mode,
-     * we should send back a response which mimics the WP_Error auth failed response
-     *
-     * note: we need to add this hook since we can't alter the query args on a single-resource endpoint (rest_post_query is only called on collections)
-     */
-    public function check_response_publish_status() {
-        $types = get_post_types( array( 'public' => true, 'show_in_rest' => true ) );
-
-        foreach( $types as $key => $type ) {
-            add_action( "rest_prepare_$type", function( $response ) {
-                global $post;
-
-                if( $post->post_status != 'publish' && !ROOFTOP_INCLUDE_DRAFTS ) {
-                    $response = new Custom_WP_Error( 'unauthorized', 'Authentication failed', array( 'status'=>403 ) );
-                }
-                return $response;
-            });
-        }
     }
 
     function generate_post_preview_key( $original_post ) {
