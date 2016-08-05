@@ -96,8 +96,6 @@ class Rooftop_Preview_Mode_Admin {
 	 */
 	private function load_dependencies() {
 
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-rooftop-preview-mode-admin-errors.php';
-
 		/**
 		 * The class responsible for orchestrating the actions and filters of the
 		 * core plugin.
@@ -157,7 +155,6 @@ class Rooftop_Preview_Mode_Admin {
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
 
         $this->loader->add_action( 'admin_menu', $plugin_admin, 'preview_menu_links' );
-
         $this->loader->add_filter( 'preview_post_link', $plugin_admin, 'alter_preview_link' );
     }
 
@@ -177,13 +174,10 @@ class Rooftop_Preview_Mode_Admin {
 
         // add custom rooftop filters
         $this->loader->add_filter( 'rooftop_previewable_content_types', $plugin_public, 'previewable_content_types' );
-        $this->loader->add_filter( 'rooftop_published_statuses', $plugin_public, 'published_statuses' );
         $this->loader->add_filter( 'rooftop_generate_post_preview_key', $plugin_public, 'generate_post_preview_key', 10, 1 );
 
         // register wp/rest-api hooks
-        $this->loader->add_action( 'muplugins_loaded', $plugin_public, 'define_rooftop_drafts_constant' );
         $this->loader->add_action( 'rest_api_init', $plugin_public, 'add_preview_route', 100, 1 );
-        $this->loader->add_action( 'rest_api_init', $plugin_public, 'check_response_publish_status', 10, 1 );
 
 	}
 
