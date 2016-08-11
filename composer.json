@@ -14,7 +14,7 @@
             "url": "http://wpackagist.org"
         }
     ],
-    "type": "wordpress-muplugin",
+    "type": "wordpress-optional-plugin",
     "require": {
     }
 }
