@@ -16,5 +16,6 @@
     ],
     "type": "wordpress-optional-plugin",
     "require": {
+        "composer/installers": "~1.0"
     }
 }
