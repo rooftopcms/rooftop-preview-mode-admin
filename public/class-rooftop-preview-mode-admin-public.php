@@ -219,7 +219,7 @@ class Rooftop_Preview_Mode_Admin_Public {
             'slug'         => $post->post_name,
             'status'       => $post->post_status,
             'type'         => $post->post_type,
-            'title'        => $preview_post->post_title,
+            'title'        => array( 'rendered' => $preview_post->post_title ),
             'link'         => get_permalink( $preview_post->ID ),
         );
 
