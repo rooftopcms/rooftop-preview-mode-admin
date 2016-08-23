@@ -308,8 +308,8 @@ class Rooftop_Preview_Mode_Admin_Public {
     }
 
     protected function prepare_links( $post ) {
-        $base = "foo";
-        $post_type = "bar";
+        $base = $post->post_type."s";
+        $post_type = $post->post_type;
 
         $links = array(
             'self' => array(
