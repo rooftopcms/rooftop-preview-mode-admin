@@ -153,11 +153,16 @@ class Rooftop_Preview_Mode_Admin_Public {
             $route  = $request->get_route();
 
             $preview_request = new WP_REST_Request($method, $route);
+
+            // first get the response we would send back for the parent post (we'll need some of its attributes, like 'links')
+            $post_data = $this->prepare_item_for_response( $post, $post->post_type, $preview_request );
+
             $preview_data = $this->prepare_item_for_response( $preview_post, $post->post_type, $preview_request );
             $preview_response = rest_ensure_response( $preview_data );
 
             $rooftop_links_filter = "rooftop_prepare_{$post->post_type}_links";
-            $rooftop_links = apply_filters( $rooftop_links_filter, array(), $post );
+            $rooftop_preview_links = apply_filters( $rooftop_links_filter, $this->prepare_links( $post ) );
+            $rooftop_links = array_merge( $post_data->get_links(), $rooftop_preview_links );
             $preview_response->add_links( $rooftop_links );
 
             return $preview_response;
@@ -208,23 +213,30 @@ class Rooftop_Preview_Mode_Admin_Public {
 
         // Base fields for every post.
         $preview_data = array(
-            'id'           => $post->ID,
-            'preview_key'  => apply_filters( 'rooftop_generate_post_preview_key', $post ),
-            'guid'         => array(
+            'id'             => $post->ID,
+            'author'         => (int)$post->post_author,
+            'comment_status' => $post->comment_status,
+            'preview_key'    => apply_filters( 'rooftop_generate_post_preview_key', $post ),
+            'guid'           => array(
                 /** This filter is documented in wp-includes/post-template.php */
-                'rendered' => apply_filters( 'get_the_guid', $preview_post->guid ),
-                'raw'      => $preview_post->guid,
+                'rendered'   => apply_filters( 'get_the_guid', $preview_post->guid ),
+                'raw'        => $preview_post->guid,
             ),
-            'date'         => $post->post_date,
-            'date_gmt'     => $post->post_date_gmt,
-            'modified'     => $post->post_modified,
-            'modified_gmt' => $post->post_modified_gmt,
-            'password'     => $post->post_password,
-            'slug'         => $post->post_name,
-            'status'       => $post->post_status,
-            'type'         => $post->post_type,
-            'title'        => array( 'rendered' => $preview_post->post_title ),
-            'link'         => get_permalink( $preview_post->ID ),
+            'date'           => $post->post_date,
+            'date_gmt'       => $post->post_date_gmt,
+            'featured_media' => $featured_media = (int)get_post_thumbnail_id( $post->ID ),
+            'menu_order'     => $post->menu_order,
+            'modified'       => $post->post_modified,
+            'modified_gmt'   => $post->post_modified_gmt,
+            'parent'         => $post->post_parent,
+            'password'       => $post->post_password,
+            'ping_status'    => $post->ping_status,
+            'slug'           => $post->post_name,
+            'status'         => $post->post_status,
+            'type'           => $post->post_type,
+            'template'       => $post->page_template,
+            'title'          => array( 'rendered' => $preview_post->post_title ),
+            'link'           => get_permalink( $preview_post->ID ),
         );
 
         $preview_data = $this->add_additional_fields_to_object( $preview_data, $preview_request );
@@ -315,6 +327,7 @@ class Rooftop_Preview_Mode_Admin_Public {
         $base = $post->post_type."s";
         $post_type = $post->post_type;
 
+        // Entity meta
         $links = array(
             'self' => array(
                 'href'   => rest_url( trailingslashit( $base ) . $post->ID ),
@@ -326,6 +339,78 @@ class Rooftop_Preview_Mode_Admin_Public {
                 'href'   => rest_url( '/wp/v2/types/' . $post_type ),
             ),
         );
+
+        if ( ( in_array( $post->post_type, array( 'post', 'page' ) ) || post_type_supports( $post->post_type, 'author' ) )
+            && ! empty( $post->post_author ) ) {
+            $links['author'] = array(
+                'href'       => rest_url( '/wp/v2/users/' . $post->post_author ),
+                'embeddable' => true,
+            );
+        };
+
+        if ( in_array( $post->post_type, array( 'post', 'page' ) ) || post_type_supports( $post->post_type, 'comments' ) ) {
+            $replies_url = rest_url( '/wp/v2/comments' );
+            $replies_url = add_query_arg( 'post', $post->ID, $replies_url );
+            $links['replies'] = array(
+                'href'         => $replies_url,
+                'embeddable'   => true,
+            );
+        }
+
+        if ( in_array( $post->post_type, array( 'post', 'page' ) ) || post_type_supports( $post->post_type, 'revisions' ) ) {
+            $links['version-history'] = array(
+                'href' => rest_url( trailingslashit( $base ) . $post->ID . '/revisions' ),
+            );
+        }
+        $post_type_obj = get_post_type_object( $post->post_type );
+        if ( $post_type_obj->hierarchical && ! empty( $post->post_parent ) ) {
+            $links['up'] = array(
+                'href'       => rest_url( trailingslashit( $base ) . (int) $post->post_parent ),
+                'embeddable' => true,
+            );
+        }
+
+        // If we have a featured media, add that.
+        if ( $featured_media = get_post_thumbnail_id( $post->ID ) ) {
+            $image_url = rest_url( 'wp/v2/media/' . $featured_media );
+            $links['https://api.w.org/featuredmedia'] = array(
+                'href'       => $image_url,
+                'embeddable' => true,
+            );
+        }
+        if ( ! in_array( $post->post_type, array( 'attachment', 'nav_menu_item', 'revision' ) ) ) {
+            $attachments_url = rest_url( 'wp/v2/media' );
+            $attachments_url = add_query_arg( 'parent', $post->ID, $attachments_url );
+            $links['https://api.w.org/attachment'] = array(
+                'href'       => $attachments_url,
+            );
+        }
+
+        $taxonomies = get_object_taxonomies( $post->post_type );
+        if ( ! empty( $taxonomies ) ) {
+            $links['https://api.w.org/term'] = array();
+
+            foreach ( $taxonomies as $tax ) {
+                $taxonomy_obj = get_taxonomy( $tax );
+                // Skip taxonomies that are not public.
+                if ( empty( $taxonomy_obj->show_in_rest ) ) {
+                    continue;
+                }
+
+                $tax_base = ! empty( $taxonomy_obj->rest_base ) ? $taxonomy_obj->rest_base : $tax;
+                $terms_url = add_query_arg(
+                    'post',
+                    $post->ID,
+                    rest_url( 'wp/v2/' . $tax_base )
+                );
+
+                $links['https://api.w.org/term'][] = array(
+                    'href'       => $terms_url,
+                    'taxonomy'   => $tax,
+                    'embeddable' => true,
+                );
+            }
+        }
 
         return $links;
     }
