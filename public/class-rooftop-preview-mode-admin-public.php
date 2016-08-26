@@ -148,6 +148,10 @@ class Rooftop_Preview_Mode_Admin_Public {
 
         $preview_post = wp_get_post_autosave( $post->ID );
 
+        if( !$preview_post ) {
+            $preview_post = $post;
+        }
+
         if( $preview_post ) {
             $method = "GET";
             $route  = $request->get_route();
