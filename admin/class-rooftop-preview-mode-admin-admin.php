@@ -189,4 +189,16 @@ EOF;
         exit;
     }
 
+    public function alter_draft_posts_slug( $data, $post_array ) {
+        $has_post_name = array_key_exists( 'post_name', $post_array ) && $post_array['post_name'] != "";
+
+        if( $post_array['post_status'] === "draft" && !$has_post_name ) {
+            $data['post_name'] = wp_unique_post_slug( "rt-draft-".wp_generate_password( 10, false ), $post_array['ID'], $post_array['post_status'], $post_array['post_type'], $post_array['post_parent'] );
+        }elseif( $post_array['post_status'] === "publish" && preg_match( '/^rt-draft-/', $post_array['post_name'] ) ) {
+            $data['post_name'] = '';
+        }
+
+        return $data;
+    }
+
 }

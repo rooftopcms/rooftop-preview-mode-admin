@@ -3,6 +3,6 @@
  * included in this file.
  */
 
-.preview.button {
+body:not(.post-new-php) .preview.button {
     display: block;
 }
