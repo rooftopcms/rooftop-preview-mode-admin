@@ -268,14 +268,14 @@ class Rooftop_Preview_Mode_Admin_Public {
     }
 
     function generate_post_preview_key( $original_post ) {
-        $previewing_post = wp_get_post_autosave( $original_post->ID );
+        $post = wp_get_post_autosave( $original_post->ID );
         
-        if( $previewing_post ) {
-            $components = [$previewing_post->post_type, $previewing_post->ID, $previewing_post->post_modified];
-            $key = md5(implode("-", $components));
-        }else {
-            $key = null;
+        if( !$post ) {
+            $post = $original_post;
         }
+
+        $components = [$post->post_type, $post->ID, $post->post_modified];
+        $key = md5(implode("-", $components));
 
         return $key;
     }
