@@ -160,13 +160,15 @@ class Rooftop_Preview_Mode_Admin_Public {
 
             // first get the response we would send back for the parent post (we'll need some of its attributes, like 'links')
             $post_data = $this->prepare_item_for_response( $post, $post->post_type, $preview_request );
+            $post_response = rest_ensure_response( $post_data );
 
             $preview_data = $this->prepare_item_for_response( $preview_post, $post->post_type, $preview_request );
             $preview_response = rest_ensure_response( $preview_data );
+            $original_post_links = WP_REST_Server::get_compact_response_links( $post_response );
 
             $rooftop_links_filter = "rooftop_prepare_{$post->post_type}_links";
             $rooftop_preview_links = apply_filters( $rooftop_links_filter, $this->prepare_links( $post ) );
-            $rooftop_links = array_merge( $post_data->get_links(), $rooftop_preview_links );
+            $rooftop_links = array_merge( $original_post_links, $rooftop_preview_links );
             $preview_response->add_links( $rooftop_links );
 
             return $preview_response;
