@@ -167,7 +167,7 @@ class Rooftop_Preview_Mode_Admin_Public {
             $original_post_links = WP_REST_Server::get_compact_response_links( $post_response );
 
             $rooftop_links_filter = "rooftop_prepare_{$post->post_type}_links";
-            $rooftop_preview_links = apply_filters( $rooftop_links_filter, $this->prepare_links( $post ) );
+            $rooftop_preview_links = apply_filters( $rooftop_links_filter, $this->prepare_links( $post ), $post );
             $rooftop_links = array_merge( $original_post_links, $rooftop_preview_links );
             $preview_response->add_links( $rooftop_links );
 
