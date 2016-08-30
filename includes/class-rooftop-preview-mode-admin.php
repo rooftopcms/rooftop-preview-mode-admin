@@ -157,9 +157,7 @@ class Rooftop_Preview_Mode_Admin {
         $this->loader->add_action( 'admin_menu', $plugin_admin, 'preview_menu_links' );
         $this->loader->add_filter( 'preview_post_link', $plugin_admin, 'alter_preview_link' );
 
-        if( is_admin() ) {
-            $this->loader->add_filter( 'wp_insert_post_data', $plugin_admin, 'alter_draft_posts_slug', 10, 2 );
-        }
+        $this->loader->add_filter( 'wp_insert_post_data', $plugin_admin, 'alter_draft_posts_slug', 10, 2 );
     }
 
 	/**

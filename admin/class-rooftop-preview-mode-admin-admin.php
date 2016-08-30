@@ -193,12 +193,14 @@ EOF;
         $has_post_name = array_key_exists( 'post_name', $post_array ) && $post_array['post_name'] != "";
 
         if( $post_array['post_status'] === "draft" && !$has_post_name ) {
-            $data['post_name'] = wp_unique_post_slug( "rt-draft-".wp_generate_password( 10, false ), $post_array['ID'], $post_array['post_status'], $post_array['post_type'], $post_array['post_parent'] );
+            $slug_id = array_key_exists( 'id', $post_array ) ? $post_array['id'] : wp_generate_password( 10, false );
+            $slug_parts = array("rt-draft", $slug_id, sanitize_title( $post_array['post_title'] ) );
+            $slug       = implode( "-", array_filter( $slug_parts ) );
+            $data['post_name'] = wp_unique_post_slug( $slug, $post_array['ID'], $post_array['post_status'], $post_array['post_type'], $post_array['post_parent'] );
         }elseif( $post_array['post_status'] === "publish" && preg_match( '/^rt-draft-/', $post_array['post_name'] ) ) {
             $data['post_name'] = '';
         }
 
         return $data;
     }
-
 }
