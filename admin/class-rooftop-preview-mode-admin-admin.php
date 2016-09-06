@@ -197,7 +197,7 @@ EOF;
             $slug_parts = array("rt-draft", $slug_id, sanitize_title( $post_array['post_title'] ) );
             $slug       = implode( "-", array_filter( $slug_parts ) );
             $data['post_name'] = wp_unique_post_slug( $slug, $post_array['ID'], $post_array['post_status'], $post_array['post_type'], $post_array['post_parent'] );
-        }elseif( $post_array['post_status'] === "publish" && preg_match( '/^rt-draft-/', $post_array['post_name'] ) ) {
+        }elseif( $post_array['post_status'] === "publish" && preg_match( '/^rt-draft-/', @$post_array['post_name'] ) ) {
             $data['post_name'] = '';
         }
 
