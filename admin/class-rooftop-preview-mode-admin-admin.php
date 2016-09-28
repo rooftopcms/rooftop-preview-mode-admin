@@ -141,13 +141,13 @@ class Rooftop_Preview_Mode_Admin_Admin {
     }
 
     public function preview_mode_admin_index() {
-        $endpoint = get_site_option( 'preview_mode_url' );
+        $endpoint = get_blog_option( get_current_blog_id(), 'preview_mode_url' );
         require_once plugin_dir_path( __FILE__ ) . 'partials/rooftop-preview-mode-admin-index.php';
     }
 
     public function update_preview_mode_url() {
         $endpoint = (object)array('url' => $_POST['url']);
-        update_site_option( 'preview_mode_url', $endpoint );
+        update_blog_option( get_current_blog_id(), 'preview_mode_url', $endpoint );
 
         $this->preview_mode_admin_index();
     }
