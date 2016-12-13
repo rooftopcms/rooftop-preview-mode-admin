@@ -159,7 +159,7 @@ class Rooftop_Preview_Mode_Admin_Admin {
     public function preview_mode_redirect_page( $post_id ) {
         $post = get_post( $post_id );
 
-        $endpoint = get_site_option( 'preview_mode_url');
+        $endpoint = get_blog_option( get_current_blog_id(), 'preview_mode_url' );
         $id = $post->ID;
 
         if( ! $endpoint ) {
