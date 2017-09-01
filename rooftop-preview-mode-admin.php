@@ -14,13 +14,13 @@
  *
  * @wordpress-plugin
  * Plugin Name:       Rooftop Preview Mode
- * Plugin URI:        http://rooftopcms.com
- * Description:       This is a short description of what the plugin does. It's displayed in the WordPress admin area.
- * Version:           1.0.0
- * Author:            Error
- * Author URI:        http://error.agency
- * License:           GPL-2.0+
- * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
+ * Plugin URI:        http://github.com/rooftopcms/rooftop-preview-mode-admin
+ * Description:       The rooftop-preview-mode-admin plugin add's the ability to preview content without publishing it when Rooftop is properly configured and the client site is built with preview support.
+ * Version:           1.2.1
+ * Author:            RooftopCMS
+ * Author URI:        http://rooftopcms.com
+ * License:           GPL-3.0+
+ * License URI:       http://www.gnu.org/licenses/gpl-3.0.txt
  * Text Domain:       rooftop-preview-mode-admin
  * Domain Path:       /languages
  */
