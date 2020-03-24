@@ -112,7 +112,7 @@ class Rooftop_Preview_Mode_Admin_Admin {
      *******/
     public function preview_menu_links() {
         $rooftop_preview_mode_menu_slug = "rooftop-overview";
-        add_submenu_page($rooftop_preview_mode_menu_slug, "Preview Mode", "Preview Mode", "manage_options", $this->plugin_name."-overview", function() {
+        add_menu_page("Preview Mode", "Preview Mode", "manage_options", $this->plugin_name."-overview", function() {
             if($_POST && array_key_exists('method', $_POST)) {
                 $method = strtoupper($_POST['method']);
             }elseif($_POST && array_key_exists('id', $_POST)) {
@@ -126,10 +126,10 @@ class Rooftop_Preview_Mode_Admin_Admin {
                     $this->preview_mode_admin_index();
                     break;
                 default:
-                     if( !isset( $_POST['preview-mode-admin-field-token']) || !wp_verify_nonce( $_POST['preview-mode-admin-field-token'], 'rooftop-preview-mode-admin') ) {
-                         echo "Couldn't verify form input";
-                         exit;
-                     }
+                    if( !isset( $_POST['preview-mode-admin-field-token']) || !wp_verify_nonce( $_POST['preview-mode-admin-field-token'], 'rooftop-preview-mode-admin') ) {
+                        echo "Couldn't verify form input";
+                        exit;
+                    }
                     $this->update_preview_mode_url();
             }
         } );
@@ -141,14 +141,14 @@ class Rooftop_Preview_Mode_Admin_Admin {
     }
 
     public function preview_mode_admin_index() {
-        $endpoint = get_blog_option( get_current_blog_id(), 'preview_mode_url' );
+        $endpoint = get_option( 'preview_mode_url' );
         require_once plugin_dir_path( __FILE__ ) . 'partials/rooftop-preview-mode-admin-index.php';
     }
 
     public function update_preview_mode_url() {
         $endpoint = (object)array('url' => $_POST['url']);
-        update_blog_option( get_current_blog_id(), 'preview_mode_url', $endpoint );
-
+        $u = update_option( 'preview_mode_url', $endpoint );
+        
         $this->preview_mode_admin_index();
     }
 
@@ -159,7 +159,7 @@ class Rooftop_Preview_Mode_Admin_Admin {
     public function preview_mode_redirect_page( $post_id ) {
         $post = get_post( $post_id );
 
-        $endpoint = get_blog_option( get_current_blog_id(), 'preview_mode_url' );
+        $endpoint = get_option( 'preview_mode_url' );
         $id = $post->ID;
 
         if( ! $endpoint ) {
