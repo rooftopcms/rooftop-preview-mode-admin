@@ -100,9 +100,12 @@ class Rooftop_Preview_Mode_Admin_Admin {
 
 	}
 
-    public function alter_preview_link() {
+    public function alter_preview_link($link) {
         global $post;
-        $url = "/wp-admin/admin.php?page=rooftop-preview-mode-admin-preview&post=$post->ID";
+
+        $post_parent = $post->post_parent;
+
+        $url = "/wp-admin/admin.php?page=rooftop-preview-mode-admin-preview&post=$post_parent&id=$post->ID";
 
         return $url;
     }
@@ -135,7 +138,7 @@ class Rooftop_Preview_Mode_Admin_Admin {
         } );
 
         add_submenu_page($rooftop_preview_mode_menu_slug."hidden", "Preview Mode Redirect", "Preview Mode Redirect", "manage_options", $this->plugin_name."-preview", function() {
-            $this->preview_mode_redirect_page($_GET['post']);
+            $this->preview_mode_redirect_page($_GET['post'], $_GET['id']);
             exit;
         } );
     }
@@ -156,12 +159,10 @@ class Rooftop_Preview_Mode_Admin_Admin {
      * @param $post_id
      *
      */
-    public function preview_mode_redirect_page( $post_id ) {
-        $post = get_post( $post_id );
-
+    public function preview_mode_redirect_page( $post_id, $revision_id ) {
         $endpoint = get_option( 'preview_mode_url' );
-        $id = $post->ID;
-
+        $post = get_post( $post_id );
+        
         if( ! $endpoint ) {
             $link = "<a href='?page=rooftop-preview-mode-admin-overview'>here</a>";
             echo "<br/><br/>Please configure your preview mode endpoint ${link}";
@@ -171,11 +172,14 @@ class Rooftop_Preview_Mode_Admin_Admin {
         }
 
         $post_type = $post->post_type;
+        $nonce = wp_create_nonce( 'wp_rest' );
         $key = apply_filters( 'rooftop_generate_post_preview_key', $post );
 
         $form = <<<EOF
 <form action="{$endpoint->url}" name="rooftop_preview_form" method="POST">
-    <input type="hidden" name="id" value="{$id}" />
+    <input type="hidden" name="id" value="{$post_id}" />
+    <input type="hidden" name="revision_id" value="{$revision_id}" />
+    <input type="hidden" name="nonce" value="{$nonce}" />
     <input type="hidden" name="post_type" value="{$post_type}" />
     <input type="hidden" name="preview_key" value="{$key}" />
 </form>
