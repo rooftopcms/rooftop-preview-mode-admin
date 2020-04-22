@@ -168,20 +168,17 @@ class Rooftop_Preview_Mode_Admin_Admin {
             echo "<br/><br/>Please configure your preview mode endpoint ${link}";
             return;
         }else {
-            echo "Previewing...";
+            echo "Previewing...<br/><br/>";
         }
 
-        $post_type = $post->post_type;
-        $nonce = wp_create_nonce( 'wp_rest' );
-        $key = apply_filters( 'rooftop_generate_post_preview_key', $post );
+        $post_path = apply_filters( 'rooftop/build_post_path', $post_id );
+	    $preview_token = apply_filters( 'rooftop/preview_api_key', $revision_id );
 
         $form = <<<EOF
-<form action="{$endpoint->url}" name="rooftop_preview_form" method="POST">
+<form action="{$endpoint->url}$post_path?token=$preview_token&id=$post_id&revision_id=$revision_id" name="rooftop_preview_form" method="GET">
     <input type="hidden" name="id" value="{$post_id}" />
     <input type="hidden" name="revision_id" value="{$revision_id}" />
-    <input type="hidden" name="nonce" value="{$nonce}" />
-    <input type="hidden" name="post_type" value="{$post_type}" />
-    <input type="hidden" name="preview_key" value="{$key}" />
+    <input type="hidden" name="token" value="{$preview_token}" />
 </form>
 
 <script type="text/javascript">
