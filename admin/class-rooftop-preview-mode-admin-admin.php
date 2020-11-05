@@ -103,11 +103,53 @@ class Rooftop_Preview_Mode_Admin_Admin {
     public function alter_preview_link($link) {
         global $post;
 
-        $post_parent = $post->post_parent;
-
-        $url = "/wp-admin/admin.php?page=rooftop-preview-mode-admin-preview&post=$post_parent&id=$post->ID";
+        $url = "/wp-admin/admin.php?page=rooftop-preview-mode-admin-preview&post=$post->ID&id=$post->ID";
 
         return $url;
+    }
+
+    /**
+     * @param $post_id
+     *
+     */
+    public function preview_mode_redirect_page( $post_id ) {
+        $endpoint = get_option( 'preview_mode_url' );
+        $post = get_post( $post_id );
+
+        $revisions = wp_get_post_revisions( $post->ID );
+        $revision_ids = array_reverse( array_keys( $revisions ) );
+        $revision_id = array_pop( $revision_ids );
+
+        if( ! $revision_id ) {
+            echo "<p>No preview revisions available</p><br/><br/>";
+            exit;
+        }
+
+        if( ! $endpoint ) {
+            $link = "<a href='?page=rooftop-preview-mode-admin-overview'>here</a>";
+            echo "<br/><br/>Please configure your preview mode endpoint ${link}";
+            return;
+        }else {
+            echo "<p>Previewing...</p><br/><br/>";
+        }
+
+        $post_path = apply_filters( 'rooftop/build_post_path', $post_id );
+        $preview_token = apply_filters( 'rooftop/preview_api_key', $revision_id );
+
+        $form = <<<EOF
+<form action="{$endpoint->url}$post_path?token=$preview_token&id=$post_id&revision_id=$revision_id" name="rooftop_preview_form" method="GET">
+    <input type="hidden" name="id" value="{$post_id}" />
+    <input type="hidden" name="revision_id" value="{$revision_id}" />
+    <input type="hidden" name="token" value="{$preview_token}" />
+</form>
+
+<script type="text/javascript">
+    document.rooftop_preview_form.submit()
+</script>
+EOF;
+        echo $form;
+
+        exit;
     }
 
     /*******
@@ -153,41 +195,6 @@ class Rooftop_Preview_Mode_Admin_Admin {
         $u = update_option( 'preview_mode_url', $endpoint );
         
         $this->preview_mode_admin_index();
-    }
-
-    /**
-     * @param $post_id
-     *
-     */
-    public function preview_mode_redirect_page( $post_id, $revision_id ) {
-        $endpoint = get_option( 'preview_mode_url' );
-        $post = get_post( $post_id );
-        
-        if( ! $endpoint ) {
-            $link = "<a href='?page=rooftop-preview-mode-admin-overview'>here</a>";
-            echo "<br/><br/>Please configure your preview mode endpoint ${link}";
-            return;
-        }else {
-            echo "Previewing...<br/><br/>";
-        }
-
-        $post_path = apply_filters( 'rooftop/build_post_path', $post_id );
-	    $preview_token = apply_filters( 'rooftop/preview_api_key', $revision_id );
-
-        $form = <<<EOF
-<form action="{$endpoint->url}$post_path?token=$preview_token&id=$post_id&revision_id=$revision_id" name="rooftop_preview_form" method="GET">
-    <input type="hidden" name="id" value="{$post_id}" />
-    <input type="hidden" name="revision_id" value="{$revision_id}" />
-    <input type="hidden" name="token" value="{$preview_token}" />
-</form>
-
-<script type="text/javascript">
-    document.rooftop_preview_form.submit()
-</script>
-EOF;
-        echo $form;
-
-        exit;
     }
 
     public function alter_draft_posts_slug( $data, $post_array ) {
