@@ -179,7 +179,7 @@ EOF;
             }
         } );
 
-        add_submenu_page($rooftop_preview_mode_menu_slug."hidden", "Preview Mode Redirect", "Preview Mode Redirect", "manage_options", $this->plugin_name."-preview", function() {
+        add_submenu_page($rooftop_preview_mode_menu_slug."hidden", "Preview Mode Redirect", "Preview Mode Redirect", "edit_others_posts", $this->plugin_name."-preview", function() {
             $this->preview_mode_redirect_page($_GET['post'], $_GET['id']);
             exit;
         } );
